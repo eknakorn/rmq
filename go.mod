@@ -1,4 +1,4 @@
-module github.com/eknakorn/rmq.git
+module github.com/eknakorn/rmq
 
 go 1.17
 
