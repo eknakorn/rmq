@@ -40,13 +40,11 @@ func NewServer(config ServerConfig, rabbit *Rabbit) *Server {
 }
 
 type RabbitConfig struct {
-	Schema         string
-	Username       string
-	Password       string
-	Host           string
-	Port           string
-	VHost          string
-	ConnectionName string
+	Schema   string
+	Username string
+	Password string
+	Host     string
+	Port     string
 }
 
 type Rabbit struct {
@@ -64,15 +62,14 @@ func NewRabbit(config RabbitConfig) *Rabbit {
 // Connect connects to RabbitMQ server.
 func (r *Rabbit) Connect() error {
 	if r.connection == nil || r.connection.IsClosed() {
-		con, err := amqp.DialConfig(fmt.Sprintf(
-			"%s://%s:%s@%s:%s/%s",
+		con, err := amqp.Dial(fmt.Sprintf(
+			"%s://%s:%s@%s:%s",
 			r.config.Schema,
 			r.config.Username,
 			r.config.Password,
 			r.config.Host,
 			r.config.Port,
-			r.config.VHost,
-		), amqp.Config{Properties: amqp.Table{"connection_name": r.config.ConnectionName}})
+		))
 		if err != nil {
 			return err
 		}
