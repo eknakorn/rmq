@@ -23,22 +23,32 @@ func (a Server) Setup() error {
 	return nil
 }
 
-func (c Server) Publish(channel *amqp.Channel, message string) error {
+func (s Server) Publish(message []byte) error {
+
+	con, err := s.Rabbit.Connection()
+	if err != nil {
+		return errors.Wrap(err, "failed to connect rabbitMQ")
+	}
+
+	channel, err := con.Channel()
+	if err != nil {
+		return errors.Wrap(err, "failed to open channel rabbitMQ")
+	}
 
 	if err := channel.Confirm(false); err != nil {
 		return errors.Wrap(err, "failed to put channel in confirmation mode")
 	}
 
 	if err := channel.Publish(
-		c.config.ExchangeName,
-		c.config.ExchangeType,
+		s.config.ExchangeName,
+		s.config.ExchangeType,
 		true,
 		false,
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent,
 			MessageId:    uuid.New().String(),
-			ContentType:  c.config.ExchangeType,
-			Body:         []byte(message),
+			ContentType:  s.config.ExchangeType,
+			Body:         message,
 		},
 	); err != nil {
 		return errors.Wrap(err, "failed to publish message")
@@ -51,7 +61,7 @@ func (c Server) Publish(channel *amqp.Channel, message string) error {
 		}
 	case <-channel.NotifyReturn(make(chan amqp.Return)):
 		return errors.New("failed to deliver message to exchange/queue")
-	case <-time.After(c.config.ChannelNotifyTimeout):
+	case <-time.After(s.config.ChannelNotifyTimeout):
 		log.Println("message delivery confirmation to exchange/queue timed out")
 	}
 
