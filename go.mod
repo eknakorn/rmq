@@ -1,4 +1,4 @@
-module github.com/eknakorn/rmq
+module github.com/tech-tomorrow/rmq
 
 go 1.17
 
