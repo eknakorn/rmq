@@ -9,21 +9,23 @@ import (
 )
 
 type ServerConfig struct {
-	ExchangeName  string
-	ExchangeType  string
-	RoutingKey    string
-	QueueName     string
-	ConsumerName  string
-	ConsumerCount int
-	PrefetchCount int
-	Reconnect     struct {
-		MaxAttempt int
-		Interval   time.Duration
-	}
-	DLX                  string
+	ExchangeName         string
+	DeadLetterExchange   string
+	ExchangeType         string
+	RoutingKey           string
+	DeadLetterRoutingKey string
+	QueueName            string
+	DeadLetterQueueName  string
+	ConsumerName         string
+	ConsumerCount        int
+	PrefetchCount        int
 	QueueMode            string
 	ChannelNotifyTimeout time.Duration
 	ContentType          string
+	Reconnect            struct {
+		MaxAttempt int
+		Interval   time.Duration
+	}
 }
 
 type Server struct {
@@ -120,8 +122,11 @@ func (c Server) declareCreate(channel *amqp.Channel) error {
 	}
 
 	args := amqp.Table{"x-queue-mode": c.config.QueueMode}
-	if c.config.DLX != "" {
-		args["x-dead-letter-exchange"] = c.config.DLX
+	if c.config.DeadLetterExchange != "" {
+		args["x-dead-letter-exchange"] = c.config.DeadLetterRoutingKey
+	}
+	if c.config.DeadLetterRoutingKey != "" {
+		args["x-dead-letter-routing-key"] = c.config.DeadLetterRoutingKey
 	}
 
 	if _, err := channel.QueueDeclare(
