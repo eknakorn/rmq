@@ -26,11 +26,11 @@ func (c *Server) ConsumerStart() error {
 		return err
 	}
 
-	if err := channel.Qos(c.config.PrefetchCount, 0, false); err != nil {
+	if err := channel.Qos(c.Config.PrefetchCount, 0, false); err != nil {
 		return err
 	}
 
-	for i := 1; i <= c.config.ConsumerCount; i++ {
+	for i := 1; i <= c.Config.ConsumerCount; i++ {
 		id := i
 		go c.consume(channel, id)
 	}
@@ -47,8 +47,8 @@ func (c *Server) ConsumerStart() error {
 // message load.
 func (c *Server) consume(channel *amqp.Channel, id int) {
 	msgs, err := channel.Consume(
-		c.config.QueueName,
-		fmt.Sprintf("%s (%d/%d)", c.config.ConsumerName, id, c.config.ConsumerCount),
+		c.Config.QueueName,
+		fmt.Sprintf("%s (%d/%d)", c.Config.ConsumerName, id, c.Config.ConsumerCount),
 		false,
 		false,
 		false,
@@ -56,7 +56,7 @@ func (c *Server) consume(channel *amqp.Channel, id int) {
 		nil,
 	)
 	if err != nil {
-		log.Println(fmt.Sprintf("CRITICAL: Unable to start consumer (%d/%d)", id, c.config.ConsumerCount))
+		log.Println(fmt.Sprintf("CRITICAL: Unable to start consumer (%d/%d)", id, c.Config.ConsumerCount))
 
 		return
 	}

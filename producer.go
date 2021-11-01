@@ -40,14 +40,14 @@ func (s Server) Publish(message []byte) error {
 	}
 
 	if err := channel.Publish(
-		s.config.ExchangeName,
-		s.config.ExchangeType,
+		s.Config.ExchangeName,
+		s.Config.ExchangeType,
 		true,
 		false,
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent,
 			MessageId:    uuid.New().String(),
-			ContentType:  s.config.ExchangeType,
+			ContentType:  s.Config.ExchangeType,
 			Body:         message,
 		},
 	); err != nil {
@@ -61,7 +61,7 @@ func (s Server) Publish(message []byte) error {
 		}
 	case <-channel.NotifyReturn(make(chan amqp.Return)):
 		return errors.New("failed to deliver message to exchange/queue")
-	case <-time.After(s.config.ChannelNotifyTimeout):
+	case <-time.After(s.Config.ChannelNotifyTimeout):
 		log.Println("message delivery confirmation to exchange/queue timed out")
 	}
 

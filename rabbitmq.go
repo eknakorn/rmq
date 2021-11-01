@@ -10,7 +10,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-type ServerConfig struct {
+type Config struct {
 	ExchangeName         string
 	DeadLetterExchange   string
 	ExchangeType         string
@@ -31,19 +31,19 @@ type ServerConfig struct {
 }
 
 type Server struct {
-	config ServerConfig
+	Config Config
 	Rabbit *Rabbit
 }
 
 // NewConsumer returns a consumer instance.
-func NewServer(config ServerConfig, rabbit *Rabbit) *Server {
+func NewServer(Config Config, rabbit *Rabbit) *Server {
 	return &Server{
-		config: config,
+		Config: Config,
 		Rabbit: rabbit,
 	}
 }
 
-type RabbitConfig struct {
+type ServerConfig struct {
 	Schema   string
 	Username string
 	Password string
@@ -52,14 +52,14 @@ type RabbitConfig struct {
 }
 
 type Rabbit struct {
-	config     RabbitConfig
+	Config     ServerConfig
 	connection *amqp.Connection
 }
 
 // NewRabbit returns a RabbitMQ instance.
-func NewRabbit(config RabbitConfig) *Rabbit {
+func NewRabbit(Config ServerConfig) *Rabbit {
 	return &Rabbit{
-		config: config,
+		Config: Config,
 	}
 }
 
@@ -68,11 +68,11 @@ func (r *Rabbit) Connect() error {
 	if r.connection == nil || r.connection.IsClosed() {
 		con, err := amqp.Dial(fmt.Sprintf(
 			"%s://%s:%s@%s:%s",
-			r.config.Schema,
-			r.config.Username,
-			r.config.Password,
-			r.config.Host,
-			r.config.Port,
+			r.Config.Schema,
+			r.Config.Username,
+			r.Config.Password,
+			r.Config.Host,
+			r.Config.Port,
 		))
 		if err != nil {
 			return err
@@ -125,7 +125,7 @@ func (c *Server) ClosedConnectionListener(closed <-chan *amqp.Error) {
 
 		var i int
 
-		for i = 0; i < c.config.Reconnect.MaxAttempt; i++ {
+		for i = 0; i < c.Config.Reconnect.MaxAttempt; i++ {
 			log.Println("INFO: Attempting to reconnect")
 
 			if err := c.Rabbit.Connect(); err == nil {
@@ -136,10 +136,10 @@ func (c *Server) ClosedConnectionListener(closed <-chan *amqp.Error) {
 				}
 			}
 
-			time.Sleep(c.config.Reconnect.Interval)
+			time.Sleep(c.Config.Reconnect.Interval)
 		}
 
-		if i == c.config.Reconnect.MaxAttempt {
+		if i == c.Config.Reconnect.MaxAttempt {
 			log.Println("CRITICAL: Giving up reconnecting")
 
 			return
@@ -152,8 +152,8 @@ func (c *Server) ClosedConnectionListener(closed <-chan *amqp.Error) {
 
 func (c Server) DeclareCreate(channel *amqp.Channel) error {
 	if err := channel.ExchangeDeclare(
-		c.config.ExchangeName,
-		c.config.ExchangeType,
+		c.Config.ExchangeName,
+		c.Config.ExchangeType,
 		true,
 		false,
 		false,
@@ -163,16 +163,16 @@ func (c Server) DeclareCreate(channel *amqp.Channel) error {
 		return err
 	}
 
-	args := amqp.Table{"x-queue-mode": c.config.QueueMode}
-	if c.config.DeadLetterExchange != "" {
-		args["x-dead-letter-exchange"] = c.config.DeadLetterRoutingKey
+	args := amqp.Table{"x-queue-mode": c.Config.QueueMode}
+	if c.Config.DeadLetterExchange != "" {
+		args["x-dead-letter-exchange"] = c.Config.DeadLetterRoutingKey
 	}
-	if c.config.DeadLetterRoutingKey != "" {
-		args["x-dead-letter-routing-key"] = c.config.DeadLetterRoutingKey
+	if c.Config.DeadLetterRoutingKey != "" {
+		args["x-dead-letter-routing-key"] = c.Config.DeadLetterRoutingKey
 	}
 
 	if _, err := channel.QueueDeclare(
-		c.config.QueueName,
+		c.Config.QueueName,
 		true,
 		false,
 		false,
@@ -183,9 +183,9 @@ func (c Server) DeclareCreate(channel *amqp.Channel) error {
 	}
 
 	if err := channel.QueueBind(
-		c.config.QueueName,
-		c.config.RoutingKey,
-		c.config.ExchangeName,
+		c.Config.QueueName,
+		c.Config.RoutingKey,
+		c.Config.ExchangeName,
 		false,
 		nil,
 	); err != nil {
