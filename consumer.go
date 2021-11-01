@@ -3,8 +3,6 @@ package rmq
 import (
 	"fmt"
 	"log"
-	"os"
-	"time"
 
 	"github.com/streadway/amqp"
 )
@@ -17,14 +15,14 @@ func (c *Server) ConsumerStart() error {
 	if err != nil {
 		return err
 	}
-	go c.closedConnectionListener(con.NotifyClose(make(chan *amqp.Error)))
+	go c.ClosedConnectionListener(con.NotifyClose(make(chan *amqp.Error)))
 
 	channel, err := con.Channel()
 	if err != nil {
 		return err
 	}
 
-	if err := c.declareCreate(channel); err != nil {
+	if err := c.DeclareCreate(channel); err != nil {
 		return err
 	}
 
@@ -41,46 +39,6 @@ func (c *Server) ConsumerStart() error {
 	defer con.Close()
 
 	return nil
-}
-
-// closedConnectionListener attempts to reconnect to the server and
-// reopens the channel for set amount of time if the connection is
-// closed unexpectedly. The attempts are spaced at equal intervals.
-func (c *Server) closedConnectionListener(closed <-chan *amqp.Error) {
-	log.Println("INFO: Watching closed connection")
-
-	// If you do not want to reconnect in the case of manual disconnection
-	// via RabbitMQ UI or Server restart, handle `amqp.ConnectionForced`
-	// error code.
-	err := <-closed
-	if err != nil {
-		log.Println("INFO: Closed connection:", err.Error())
-
-		var i int
-
-		for i = 0; i < c.config.Reconnect.MaxAttempt; i++ {
-			log.Println("INFO: Attempting to reconnect")
-
-			if err := c.Rabbit.Connect(); err == nil {
-				log.Println("INFO: Reconnected")
-
-				if err := c.ConsumerStart(); err == nil {
-					break
-				}
-			}
-
-			time.Sleep(c.config.Reconnect.Interval)
-		}
-
-		if i == c.config.Reconnect.MaxAttempt {
-			log.Println("CRITICAL: Giving up reconnecting")
-
-			return
-		}
-	} else {
-		log.Println("INFO: Connection closed normally, will not reconnect")
-		os.Exit(0)
-	}
 }
 
 // consume creates a new consumer and starts consuming the messages.

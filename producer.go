@@ -16,7 +16,7 @@ func (a Server) Setup() error {
 	}
 	defer channel.Close()
 
-	if err := a.declareCreate(channel); err != nil {
+	if err := a.DeclareCreate(channel); err != nil {
 		return err
 	}
 
