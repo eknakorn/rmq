@@ -152,7 +152,7 @@ func (c *Server) ClosedConnectionListener(closed <-chan *amqp.Error) {
 
 func (c Server) DeclareCreate(channel *amqp.Channel) error {
 	if err := channel.ExchangeDeclare(
-		c.Config.ExchangeName,
+		c.Config.QueueName,
 		c.Config.ExchangeType,
 		true,
 		false,
@@ -172,7 +172,7 @@ func (c Server) DeclareCreate(channel *amqp.Channel) error {
 	}
 
 	if _, err := channel.QueueDeclare(
-		c.Config.QueueName,
+		c.Config.DeadLetterQueueName,
 		true,
 		false,
 		false,
@@ -183,9 +183,9 @@ func (c Server) DeclareCreate(channel *amqp.Channel) error {
 	}
 
 	if err := channel.QueueBind(
-		c.Config.QueueName,
-		c.Config.RoutingKey,
-		c.Config.ExchangeName,
+		c.Config.DeadLetterQueueName,
+		c.Config.DeadLetterRoutingKey,
+		c.Config.DeadLetterExchange,
 		false,
 		nil,
 	); err != nil {
