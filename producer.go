@@ -47,7 +47,7 @@ func (s Server) Publish(message []byte) error {
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent,
 			MessageId:    uuid.New().String(),
-			ContentType:  s.Config.ExchangeType,
+			ContentType:  "application/json",
 			Body:         message,
 		},
 	); err != nil {
