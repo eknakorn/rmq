@@ -66,14 +66,19 @@ func NewRabbit(Config ServerConfig) *Rabbit {
 // Connect connects to RabbitMQ server.
 func (r *Rabbit) Connect() error {
 	if r.connection == nil || r.connection.IsClosed() {
-		con, err := amqp.Dial(fmt.Sprintf(
+
+		url := fmt.Sprintf(
 			"%s://%s:%s@%s:%s",
 			r.Config.Schema,
 			r.Config.Username,
 			r.Config.Password,
 			r.Config.Host,
 			r.Config.Port,
-		))
+		)
+
+		log.Printf("INFO: amqp url: %s", url)
+
+		con, err := amqp.Dial(url)
 		if err != nil {
 			return err
 		}
